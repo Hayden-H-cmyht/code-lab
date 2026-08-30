@@ -703,13 +703,17 @@ function scheduleSave(){
   }, 400);
 }
 
+function pyTemplate(){
+  return HAS_BACKEND ? TEMPLATES.python : TPL_PY_BROWSER;
+}
 function setLang(id, keepDraft){
   if(!LANG_BY_ID[id] || id === cur && keepDraft) return;
   try{ localStorage.setItem(LS_DRAFT(cur), ta.value); }catch(e){}
   cur = id;
   try{ localStorage.setItem(LS_LAST, id); }catch(e){}
   const draft = keepDraft ? null : localStorage.getItem(LS_DRAFT(id));
-  ta.value = draft !== null && draft !== undefined ? draft : (TEMPLATES[id] || "");
+  const tpl = id === "python" ? pyTemplate() : (TEMPLATES[id] || "");
+  ta.value = draft !== null && draft !== undefined ? draft : tpl;
   const L = LANG_BY_ID[id];
   $("curLangName").textContent = L.name;
   updateLangHead();
@@ -1065,9 +1069,9 @@ async function fetchEnv(refresh){
   buildSidebar();
   updateLangHead();
   if($("envPanel").classList.contains("open")) renderEnvList();
-  /* 线上形态:Python 模板换成无 input 的浏览器版(内容未改过时) */
-  if(!HAS_BACKEND && cur === "python" && ta.value === TEMPLATES.python){
-    ta.value = TPL_PY_BROWSER;
+  /* 引擎状态明确后,把未改过的 Python 模板换成对应形态的版本 */
+  if(cur === "python" && (ta.value === TEMPLATES.python || ta.value === TPL_PY_BROWSER)){
+    ta.value = pyTemplate();
     renderEditor();
   }
 }
@@ -1271,7 +1275,7 @@ document.addEventListener("keydown", e => {
   try{ last = localStorage.getItem(LS_LAST); }catch(e){}
   cur = LANG_BY_ID[last] ? last : "python";
   const draft = localStorage.getItem(LS_DRAFT(cur));
-  ta.value = draft !== null && draft !== undefined ? draft : (TEMPLATES[cur] || "");
+  ta.value = draft !== null && draft !== undefined ? draft : (cur === "python" ? pyTemplate() : (TEMPLATES[cur] || ""));
   $("curLangName").textContent = LANG_BY_ID[cur].name;
   renderEditor();
   buildSidebar();
