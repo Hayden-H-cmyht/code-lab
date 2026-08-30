@@ -922,21 +922,46 @@ async function runJsBrowser(code){
 }
 
 /* TS 在线转译后浏览器执行 */
+const TS_CDNS = [
+  "https://cdn.jsdelivr.net/npm/typescript@5.5.4/lib/typescript.min.js",
+  "https://registry.npmmirror.com/typescript/5.5.4/files/lib/typescript.js",
+  "https://unpkg.com/typescript@5.5.4/lib/typescript.js",
+];
+let tsReady = null;
+function loadTS(){
+  tsReady ??= loadScriptAny(TS_CDNS).then(() => {
+    if(!window.ts) throw new Error("TS 编译器加载异常");
+  });
+  return tsReady;
+}
 async function runTsBrowser(code){
-  sysLine("⏳ 正在线加载 TypeScript 编译器(cdn.jsdelivr.net)…", null);
-  await loadScript("https://cdn.jsdelivr.net/npm/typescript@5.5.4/lib/typescript.min.js");
+  sysLine("⏳ 正在线加载 TypeScript 编译器…", null);
+  await loadTS();
   const js = window.ts.transpile(code);
   sysLine("✓ 转译完成,浏览器内核执行", "ok");
   await runJsBrowser(js);
 }
 
-/* Pyodide(WASM Python,浏览器形态) */
+/* Pyodide(WASM Python,浏览器形态;多 CDN 回退,国内镜像优先) */
+const PYODIDE_VERSION = "0.26.4";
+const PYODIDE_BASES = [
+  "https://registry.npmmirror.com/pyodide/" + PYODIDE_VERSION + "/files/",
+  "https://fastly.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+  "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/",
+];
 let pyodidePromise = null;
 function loadPyodideKernel(){
   if(pyodidePromise) return pyodidePromise;
   pyodidePromise = (async () => {
-    await loadScript("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
-    return await window.loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"});
+    let lastErr = null;
+    for(const base of PYODIDE_BASES){
+      try{
+        await loadScript(base + "pyodide.js");
+        return await window.loadPyodide({indexURL: base});
+      }catch(e){ lastErr = e; }
+    }
+    pyodidePromise = null;   // 失败清空,允许下次点击重试
+    throw new Error("Pyodide 各 CDN 均加载失败(" + (lastErr && lastErr.message || lastErr) + "),请检查网络后重试");
   })();
   return pyodidePromise;
 }
@@ -966,9 +991,16 @@ function loadScript(src){
     const s = document.createElement("script");
     s.src = src;
     s.onload = res;
-    s.onerror = () => rej(new Error("在线资源加载失败(需要联网): " + src));
+    s.onerror = () => rej(new Error("加载失败: " + src));
     document.head.appendChild(s);
   });
+}
+/* 依次尝试多个 CDN,任一成功即返回 */
+function loadScriptAny(urls){
+  return urls.reduce(
+    (p, url) => p.catch(() => loadScript(url)),
+    Promise.reject(new Error("no url"))
+  );
 }
 
 /* ---------------- 输出渲染 ---------------- */
