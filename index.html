@@ -462,8 +462,7 @@ Write-Host "你好,CodeLab!"
 Write-Host "版本:" $PSVersionTable.PSVersion.ToString()
 `,
 web:
-`<!-- 网页示例:点「运行」后到下方「预览」页签查看效果 -->
-<!DOCTYPE html>
+`<!-- 网页示例:点「运行」后到下方「预览」页签查看效果 --><!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -493,6 +492,23 @@ web:
 </html>
 `,
 };
+
+/* 线上版(无本地引擎)的 Python 模板:不含 input(),stdin 走下方 stdin 页签 */
+const TPL_PY_BROWSER =
+`# Python 示例(浏览器 WASM 内核 Pyodide,首次运行需联网加载)
+import sys
+
+def fib(n):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+print("你好, CodeLab!")
+print("Python", sys.version.split()[0])
+print("斐波那契:", list(fib(10)))
+print("提示: 需要 input() 交互? 在 stdin 页签填好内容再运行")
+`;
 
 /* ---------------- 语法高亮规则 ---------------- */
 const SYNTAX = {
@@ -926,9 +942,17 @@ async function runPyodide(code){
   const lines = [];
   py.setStdout({batched: s => lines.push([s, "o-out"])});
   py.setStderr({batched: s => lines.push([s, "o-err"])});
-  sysLine("✓ Pyodide 内核执行 · Python " + py.version, "ok");
+  const stdinLines = $("stdinTa").value.length ? $("stdinTa").value.split("\n") : [];
+  let si = 0;
+  py.setStdin({stdin: () => si < stdinLines.length ? stdinLines[si++] : ""});
+  sysLine("✓ Pyodide 内核执行 · Python " + py.version + (stdinLines.length ? " · stdin " + stdinLines.length + " 行" : ""), "ok");
   try{ await py.runPythonAsync(code); }
-  catch(err){ lines.push([String(err).split("\n").slice(-6).join("\n"), "o-err"]); }
+  catch(err){
+    const msg = String(err);
+    lines.push([msg.split("\n").slice(-6).join("\n"), "o-err"]);
+    if(/OSError|EOF when reading|input/.test(msg))
+      lines.push(["提示: 浏览器内核没有真正的标准输入,请把内容提前填到「stdin」页签(每行一次 input);或下载本地版完整体验", "o-err"]);
+  }
   lines.forEach(([t, c]) => outBlock(t, c));
   if(!lines.length) outBlock("(无输出)", "o-out", true);
 }
@@ -1041,6 +1065,11 @@ async function fetchEnv(refresh){
   buildSidebar();
   updateLangHead();
   if($("envPanel").classList.contains("open")) renderEnvList();
+  /* 线上形态:Python 模板换成无 input 的浏览器版(内容未改过时) */
+  if(!HAS_BACKEND && cur === "python" && ta.value === TEMPLATES.python){
+    ta.value = TPL_PY_BROWSER;
+    renderEditor();
+  }
 }
 
 /* ---------------- AI Agent 中心 ---------------- */
