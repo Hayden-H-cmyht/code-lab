@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodeLab · 多语言代码实验室</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%235b9dff'/%3E%3Ctext x='16' y='22' font-size='15' font-family='monospace' font-weight='bold' fill='white' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#141821; --bg2:#1a1f2b; --bg3:#222938; --border:#2b3242;
+    --fg:#d8dee9; --dim:#8a93a5; --accent:#5b9dff; --accent2:#7c6cff;
+    --green:#3ecf8e; --red:#ff6b6b; --yellow:#e8c04c;
+    --mono:"Cascadia Code","Consolas","Courier New",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Segoe UI",system-ui,"Microsoft YaHei",sans-serif;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ---------- 顶栏 ---------- */
+  header{display:flex;align-items:center;gap:14px;padding:0 16px;height:52px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:.5px;white-space:nowrap}
+  .logo .cube{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;font:700 13px var(--mono);color:#fff}
+  .logo small{font-weight:400;color:var(--dim);font-size:12px;margin-left:2px}
+  .spacer{flex:1}
+  .badge{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);padding:4px 10px;border:1px solid var(--border);border-radius:20px;white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0}
+  .dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+  .dot.warn{background:var(--yellow)}
+  select{background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:13px;outline:none;cursor:pointer}
+  button{background:var(--bg3);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap;font-family:inherit}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:linear-gradient(135deg,#3e7bd6,#5b9dff);border-color:transparent;font-weight:600;color:#fff}
+  button.primary:hover{filter:brightness(1.1)}
+  button.primary:disabled{opacity:.55;cursor:default;filter:none}
+  button.danger:hover{border-color:var(--red);color:var(--red)}
+  kbd{font:11px var(--mono);background:rgba(255,255,255,.14);border-radius:4px;padding:1px 5px;margin-left:6px}
+
+  /* ---------- 三栏布局 ---------- */
+  #layout{flex:1;display:flex;min-height:0}
+  #sidebar{width:188px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:8px 6px}
+  .side-title{font-size:11px;color:var(--dim);letter-spacing:1px;padding:6px 8px}
+  .lang-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:9px;cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+  .lang-item:hover{background:var(--bg3)}
+  .lang-item.active{background:var(--bg3);border-color:#37415a}
+  .lang-item .nm{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bicon{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font:700 10px var(--mono);color:#fff;flex-shrink:0}
+  .bicon.dk{color:#10131a}
+  .st{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .st.on{background:var(--green)} .st.off{background:#454e61} .st.unknown{background:var(--yellow)}
+
+  #center{flex:1;display:flex;flex-direction:column;min-width:0}
+  #editorHead{display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--bg2);border-bottom:1px solid var(--border);font-size:12px;color:var(--dim);flex-shrink:0}
+  #editorHead b{color:var(--fg);font-size:13px}
+  #editorHead .hint{margin-left:auto}
+
+  /* ---------- 编辑器 ---------- */
+  #editorWrap{flex:1;min-height:80px;display:flex;position:relative;overflow:hidden;background:var(--bg)}
+  #gutter{width:54px;overflow:hidden;padding:12px 0;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);user-select:none}
+  #gutter .ln{display:block;width:100%;padding-right:10px;text-align:right;font:14px/21px var(--mono);color:#4d566b}
+  .stack{position:relative;flex:1;overflow:hidden}
+  #hl,#code{position:absolute;inset:0;margin:0;padding:12px 16px;font:14px/21px var(--mono);white-space:pre;tab-size:4;letter-spacing:0}
+  #hl{pointer-events:none;overflow:auto;color:var(--fg)}
+  #hl code{font:inherit}
+  #code{background:transparent;color:transparent;caret-color:#fff;border:0;outline:0;resize:none;overflow:auto}
+  #code::selection{background:rgba(91,157,255,.32);color:transparent}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#333c4f;border-radius:6px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .tk-kw{color:#c678dd}.tk-str{color:#98c379}.tk-num{color:#d19a66}
+  .tk-com{color:#5f6b7d;font-style:italic}.tk-fn{color:#61afef}
+  .tk-bi{color:#56b6c2}.tk-pre{color:#e5c07b}.tk-var{color:#e06c75}
+  .tk-tag{color:#e06c75}.tk-attr{color:#d19a66}.tk-macro{color:#61afef}
+
+  /* ---------- 底部面板 ---------- */
+  #dragbar{height:5px;background:var(--bg2);border-top:1px solid var(--border);cursor:row-resize;flex-shrink:0}
+  #dragbar:hover{background:var(--accent)}
+  #panel{height:calc(var(--panelH,34vh));min-height:100px;display:flex;flex-direction:column;background:var(--bg2);flex-shrink:0}
+  #panel.folded{height:37px!important;overflow:hidden}
+  .ptabs{display:flex;align-items:center;gap:2px;padding:0 8px;height:36px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .ptab{padding:5px 12px;font-size:12px;color:var(--dim);cursor:pointer;border-radius:7px;border:1px solid transparent;user-select:none}
+  .ptab:hover{color:var(--fg)}
+  .ptab.active{background:var(--bg3);color:#fff;border-color:#37415a}
+  .ptab .mini{font-size:11px}
+  .pbody{flex:1;display:none;min-height:0;overflow:auto}
+  .pbody.active{display:block}
+  #pOut{padding:10px 14px;font:13px/1.65 var(--mono);white-space:pre-wrap;word-break:break-word}
+  .sysline{color:var(--dim);font-size:12px;margin:2px 0 8px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .sysline .ok{color:var(--green)} .sysline .bad{color:var(--red)} .sysline .warn{color:var(--yellow)}
+  .o-out{color:#d8dee9;margin:0}
+  .o-err{color:#ff8b8b;margin:8px 0 0}
+  .o-err.pre,.o-out.pre{white-space:pre-wrap}
+  .o-sec{color:#6b7690;font-size:11px;letter-spacing:1px;margin:10px 0 4px}
+  #prevFrame{width:100%;height:100%;border:0;background:#fff}
+  #stdinTa{width:100%;height:100%;background:var(--bg);color:var(--fg);border:0;outline:0;resize:none;padding:12px 14px;font:13px/1.6 var(--mono)}
+  .stdin-hint{padding:8px 14px;color:var(--dim);font-size:12px;border-bottom:1px dashed var(--border)}
+  #placeholder{color:#5b6478;padding:14px;user-select:none}
+
+  /* ---------- 环境抽屉 ---------- */
+  #envPanel{width:0;background:var(--bg2);border-left:1px solid var(--border);overflow:hidden;flex-shrink:0;transition:width .2s}
+  #envPanel.open{width:360px}
+  .env-inner{width:360px;height:100%;display:flex;flex-direction:column}
+  .env-head{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+  .env-head b{font-size:14px}
+  .env-head .cnt{color:var(--dim);font-size:12px}
+  .env-list{flex:1;overflow-y:auto;padding:4px 10px}
+  .env-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px}
+  .env-item:hover{background:var(--bg3)}
+  .env-item .info{flex:1;min-width:0}
+  .env-item .en{font-size:13px}
+  .env-item .ev{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .env-item .ev.miss{color:#5b6478}
+  .env-item .ev.note{color:var(--yellow)}
+  .copy-cmd{font-size:11px;padding:4px 9px;border-radius:6px}
+  .env-foot{padding:12px 16px;border-top:1px solid var(--border);color:var(--dim);font-size:12px;line-height:1.7}
+  code.cmd{font:11.5px var(--mono);background:var(--bg3);padding:2px 6px;border-radius:5px;color:#9ecbff;word-break:break-all}
+
+  /* ---------- toast ---------- */
+  #toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-8px);background:#2a3450;border:1px solid var(--accent);color:#fff;padding:9px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;place-items:center;z-index:60}
+  .modal-mask.show{display:grid}
+  .modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px 26px;max-width:460px;box-shadow:0 12px 48px rgba(0,0,0,.5)}
+  .modal h3{margin:0 0 8px}
+  .modal p{color:var(--dim);font-size:13px;margin:0 0 16px}
+
+  /* ---------- AI Agent 中心 ---------- */
+  #agentsMask{z-index:70}
+  #agentsPanel{width:min(1040px,95vw);max-height:90vh;background:var(--bg2);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 64px rgba(0,0,0,.55)}
+  .ag-head{display:flex;align-items:center;gap:14px;padding:16px 20px 10px}
+  .ag-title b{font-size:16px}
+  .ag-title span{display:block;font-size:11.5px;color:var(--dim);margin-top:2px}
+  #agSearch{flex:1;max-width:260px;margin-left:auto;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 12px;color:var(--fg);font-size:13px;outline:none}
+  #agSearch:focus{border-color:var(--accent)}
+  #agClose{padding:7px 12px}
+  .ag-intro{margin:0 20px;padding:10px 14px;background:var(--bg);border:1px dashed var(--border);border-radius:10px;color:var(--dim);font-size:12.5px;line-height:1.8}
+  .ag-intro b{color:var(--fg)}
+  .ag-cats{display:flex;gap:8px;padding:12px 20px 4px;flex-wrap:wrap}
+  .ag-cat{padding:6px 14px;border-radius:18px;font-size:12.5px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--dim);user-select:none}
+  .ag-cat:hover{color:#fff}
+  .ag-cat.active{background:linear-gradient(135deg,#3e7bd6,#5b9dff);color:#fff;border-color:transparent}
+  .ag-list{flex:1;overflow-y:auto;padding:12px 20px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:12px;align-content:start}
+  .ag-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .ag-card:hover{border-color:#3b4764}
+  .ag-card .top{display:flex;align-items:center;gap:10px}
+  .ag-card .top b{font-size:14.5px}
+  .ag-card .top .org{color:var(--dim);font-size:12px}
+  .ag-card .top a{margin-left:auto;font-size:11.5px;color:var(--accent);text-decoration:none;white-space:nowrap}
+  .ag-card .top a:hover{text-decoration:underline}
+  .ag-card .desc{color:var(--dim);font-size:12.5px;margin:7px 0;line-height:1.7}
+  .ag-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px}
+  .ag-tag{font-size:10.5px;padding:2px 8px;border-radius:10px;background:var(--bg3);color:#a8b3c7;border:1px solid var(--border)}
+  .ag-tag.hl{color:#ffd479;border-color:#5a4c22;background:#2b2416}
+  .ag-cmd{display:flex;align-items:center;gap:8px;background:#0c1017;border:1px solid var(--border);border-radius:8px;padding:6px 8px 6px 10px;margin-top:8px}
+  .ag-cmd code{flex:1;font:12px var(--mono);color:#9ecbff;word-break:break-all}
+  .ag-cmd .lbl{font-size:10px;color:var(--dim);white-space:nowrap}
+  .ag-cmd button{padding:3px 10px;font-size:11px;border-radius:6px}
+  .ag-steps{margin:10px 0 0;padding-left:18px;color:var(--dim);font-size:12px;line-height:1.8}
+  .ag-steps b{color:#c3cbdb;font-weight:600}
+  .ag-empty{grid-column:1/-1;color:var(--dim);text-align:center;padding:30px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="cube">{}</span>CodeLab <small>多语言代码实验室</small></div>
+  <div class="badge" id="backendBadge"><span class="dot" id="backendDot"></span><span id="backendText">检测中…</span></div>
+  <div class="spacer"></div>
+  <select id="timeoutSel" title="运行超时(秒)">
+    <option value="5">5 s</option>
+    <option value="10" selected>10 s</option>
+    <option value="15">15 s</option>
+    <option value="30">30 s</option>
+    <option value="60">60 s</option>
+  </select>
+  <button id="btnReset" title="恢复当前语言的示例代码">重置模板</button>
+  <button id="btnAgents" title="主流 AI Agent 的下载与部署指引">🤖 Agent</button>
+  <button id="btnEnv" title="查看本机语言环境 / 安装命令">⚙ 环境</button>
+  <button class="primary" id="btnRun">▶ 运行<kbd>Ctrl+↵</kbd></button>
+</header>
+
+<div id="layout">
+  <aside id="sidebar">
+    <div class="side-title">语言</div>
+    <div id="langList"></div>
+  </aside>
+
+  <div id="center">
+    <div id="editorHead">
+      <b id="curLangName">—</b>
+      <span id="curLangVer"></span>
+      <span class="hint" id="runModeHint"></span>
+    </div>
+    <div id="editorWrap">
+      <div id="gutter"></div>
+      <div class="stack">
+        <pre id="hl" aria-hidden="true"><code id="hlCode"></code></pre>
+        <textarea id="code" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      </div>
+    </div>
+    <div id="dragbar" title="拖动调整高度"></div>
+    <div id="panel">
+      <div class="ptabs">
+        <div class="ptab active" data-tab="out">输出</div>
+        <div class="ptab" data-tab="prev">预览</div>
+        <div class="ptab" data-tab="stdin">stdin</div>
+        <div class="spacer"></div>
+        <div class="ptab mini" id="btnClear" title="清空输出">清空</div>
+        <div class="ptab mini" id="btnFold" title="收起/展开">▾</div>
+      </div>
+      <div class="pbody active" id="tab-out"><div id="pOut"><div id="placeholder">按 Ctrl+Enter 或点击「运行」执行代码 · stdin 页签可给程序提供标准输入</div></div></div>
+      <div class="pbody" id="tab-prev"><iframe id="prevFrame" sandbox="allow-scripts"></iframe></div>
+      <div class="pbody" id="tab-stdin">
+        <div class="stdin-hint">以下内容将在运行时作为程序的<strong>标准输入</strong>送入(适用于 input() / scanf / read 等)</div>
+        <textarea id="stdinTa" placeholder="例如:&#10;3&#10;hello world"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <aside id="envPanel">
+    <div class="env-inner">
+      <div class="env-head">
+        <b>本机环境</b><span class="cnt" id="envCnt"></span>
+        <div class="spacer"></div>
+        <button id="btnEnvRefresh">刷新检测</button>
+        <button id="btnEnvClose">✕</button>
+      </div>
+      <div class="env-list" id="envList"><div style="padding:20px;color:var(--dim)">检测中…</div></div>
+      <div class="env-foot">
+        新装的语言环境点击 <b>刷新检测</b> 即可生效,无需重启服务。<br>
+        安装命令仅供参考,可用 <code class="cmd">winget search 名称</code> 核对。
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast"></div>
+
+<!-- AI Agent 中心 -->
+<div id="agentsMask" class="modal-mask">
+  <div id="agentsPanel">
+    <div class="ag-head">
+      <div class="ag-title">
+        <b>🤖 AI Agent 下载与部署</b>
+        <span>2026-08 现状 · 安装命令请以各官方文档为准</span>
+      </div>
+      <input id="agSearch" placeholder="搜索工具 / 厂商…">
+      <button id="agClose">✕</button>
+    </div>
+    <div class="ag-intro">
+      通用部署套路都是三步:<b>① 装命令行</b>(需要 Node 18+ 或 Python 3.10+,可在左侧「语言」栏先装好)→
+      <b>② 配 API Key 或登录</b> → <b>③ 在项目目录启动</b>。点卡片里的「复制」拿安装命令,粘到终端(PowerShell)回车即可。
+    </div>
+    <div class="ag-cats" id="agCats"></div>
+    <div class="ag-list" id="agList"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+ * CodeLab 前端
+ *  - 本地形态(经 start.bat / server.py 打开):所有语言调用本地引擎
+ *  - 浏览器形态(file 直接打开 / 部署到线上):JS 网页预览、TS 在线转译、
+ *    Python 走 Pyodide(WASM),其余语言提示需要本地版
+ * ================================================================ */
+
+/* ---------------- 语言元数据 ---------------- */
+const LANGS = [
+  { id:"python",     name:"Python",          badge:"Py",  color:"#3572A5" },
+  { id:"javascript", name:"JavaScript",      badge:"JS",  color:"#f1e05a", dk:true },
+  { id:"typescript", name:"TypeScript",      badge:"TS",  color:"#3178c6" },
+  { id:"c",          name:"C",               badge:"C",   color:"#0a6ebd" },
+  { id:"cpp",        name:"C++",             badge:"C++", color:"#f34b7d" },
+  { id:"java",       name:"Java",            badge:"Ja",  color:"#b07219" },
+  { id:"go",         name:"Go",              badge:"Go",  color:"#00ADD8", dk:true },
+  { id:"rust",       name:"Rust",            badge:"Rs",  color:"#dea584", dk:true },
+  { id:"php",        name:"PHP",             badge:"PHP", color:"#4F5D95" },
+  { id:"ruby",       name:"Ruby",            badge:"Rb",  color:"#cc342d" },
+  { id:"lua",        name:"Lua",             badge:"Lua", color:"#26456e" },
+  { id:"bash",       name:"Bash",            badge:"Sh",  color:"#4d8f3c" },
+  { id:"powershell", name:"PowerShell",      badge:"PS",  color:"#5391FE" },
+  { id:"web",        name:"网页 HTML/CSS/JS", badge:"Web", color:"#e34c26" },
+];
+const LANG_BY_ID = Object.fromEntries(LANGS.map(l => [l.id, l]));
+
+const INSTALL = {
+  python:     "winget install Python.Python.3.12",
+  javascript: "winget install OpenJS.NodeJS.LTS",
+  typescript: "winget install OpenJS.NodeJS.LTS  (Node 23+ 原生运行 TS)",
+  c:          "winget install -e --id BrechtSanders.WinLibs.POSIX.UCRT",
+  cpp:        "winget install -e --id BrechtSanders.WinLibs.POSIX.UCRT",
+  java:       "winget install Microsoft.OpenJDK.21",
+  go:         "winget install GoLang.Go",
+  rust:       "winget install Rustlang.Rustup",
+  php:        "winget install PHP.PHP",
+  ruby:       "winget install RubyInstallerTeam.Ruby",
+  lua:        "winget install DEVCOM.Lua",
+  bash:       "安装 Git for Windows 即自带 Bash",
+  powershell: "Windows 自带;新版: winget install Microsoft.PowerShell",
+  web:        "无需安装,浏览器即可预览",
+};
+
+/* ---------------- 示例代码模板 ---------------- */
+const TEMPLATES = {
+python:
+`# Python 示例:按 Ctrl+Enter 运行
+import sys
+
+def fib(n):
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+name = input("你叫什么名字? ")
+print(f"你好, {name}!")
+print("Python", sys.version.split()[0])
+print("斐波那契:", list(fib(10)))
+`,
+javascript:
+`// JavaScript 示例:按 Ctrl+Enter 运行(Node.js 环境)
+function fib(n) {
+  const seq = [0, 1];
+  for (let i = 2; i < n; i++) seq.push(seq[i - 1] + seq[i - 2]);
+  return seq.slice(0, n);
+}
+
+console.log("你好,CodeLab!");
+console.log("斐波那契:", fib(10).join(", "));
+console.log("2 ** 32 =", 2 ** 32);
+`,
+typescript:
+`// TypeScript 示例(Node 23+ 原生运行,旧版自动在线转译)
+interface Student { name: string; score: number }
+
+const students: Student[] = [
+  { name: "小明", score: 92 },
+  { name: "小红", score: 88 },
+  { name: "小刚", score: 95 },
+];
+
+const best: Student = students.reduce((a, b) => (a.score > b.score ? a : b));
+console.log(\`最高分: \${best.name} \${best.score} 分\`);
+`,
+c:
+`#include <stdio.h>
+
+int main(void) {
+    printf("你好,CodeLab!\\n");
+    for (int i = 1; i <= 5; i++) {
+        printf("%d 的平方是 %d\\n", i, i * i);
+    }
+    return 0;
+}
+`,
+cpp:
+`#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> v{5, 3, 8, 1, 9};
+    std::sort(v.begin(), v.end());
+
+    std::cout << "你好,CodeLab!\\n排序结果:";
+    for (int x : v) std::cout << " " << x;
+    std::cout << std::endl;
+    return 0;
+}
+`,
+java:
+`public class Main {
+    public static void main(String[] args) {
+        System.out.println("你好,CodeLab!");
+        int[] fib = {0, 1, 1, 2, 3, 5, 8, 13};
+        for (int x : fib) {
+            System.out.print(x + " ");
+        }
+        System.out.println();
+    }
+}
+`,
+go:
+`package main
+
+import "fmt"
+
+func fib(n int) []int {
+    seq := []int{0, 1}
+    for i := 2; i < n; i++ {
+        seq = append(seq, seq[i-1]+seq[i-2])
+    }
+    return seq[:n]
+}
+
+func main() {
+    fmt.Println("你好,CodeLab!")
+    fmt.Println("斐波那契:", fib(10))
+}
+`,
+rust:
+`fn main() {
+    println!("你好,CodeLab!");
+    let sq: Vec<u32> = (1..=5).map(|x| x * x).collect();
+    println!("平方数: {:?}", sq);
+    for (i, s) in sq.iter().enumerate() {
+        println!("{} -> {}", i + 1, s);
+    }
+}
+`,
+php:
+`<?php
+// PHP 示例:按 Ctrl+Enter 运行
+$names = ["小明", "小红", "小刚"];
+foreach ($names as $i => $name) {
+    echo ($i + 1) . ". 你好,$name!\\n";
+}
+echo "PHP 版本: " . PHP_VERSION . "\\n";
+`,
+ruby:
+`# Ruby 示例:按 Ctrl+Enter 运行
+def fib(n)
+  a, b = 0, 1
+  n.times.map { r = a; a, b = b, a + b; r }
+end
+
+puts "你好,CodeLab!"
+puts "斐波那契: #{fib(10).join(', ')}"
+`,
+lua:
+`-- Lua 示例:按 Ctrl+Enter 运行
+function fib(n)
+  local a, b = 0, 1
+  local seq = {}
+  for i = 1, n do
+    seq[i] = a
+    a, b = b, a + b
+  end
+  return seq
+end
+
+print("你好,CodeLab!")
+print("斐波那契: " .. table.concat(fib(10), ", "))
+`,
+bash:
+`#!/usr/bin/env bash
+# Bash 示例:按 Ctrl+Enter 运行
+echo "你好,CodeLab!"
+for i in 1 2 3 4 5; do
+  echo "$i 的平方是 $(( i * i ))"
+done
+echo "当前目录: $(pwd)"
+`,
+powershell:
+`# PowerShell 示例:按 Ctrl+Enter 运行
+Write-Host "你好,CodeLab!"
+1..5 | ForEach-Object {
+    "$_ 的平方是 $($_ * $_)"
+}
+Write-Host "版本:" $PSVersionTable.PSVersion.ToString()
+`,
+web:
+`<!-- 网页示例:点「运行」后到下方「预览」页签查看效果 -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: system-ui, sans-serif; display: grid; place-items: center;
+         height: 100vh; margin: 0; background: #10141f; color: #fff; }
+  .card { padding: 32px 44px; border-radius: 16px; text-align: center;
+          background: linear-gradient(135deg, #7c6cff, #00c2ff);
+          box-shadow: 0 8px 32px rgba(124,108,255,.4); }
+  h1 { margin: 0 0 8px; font-size: 22px; }
+  button { margin-top: 12px; padding: 6px 18px; border: 0; border-radius: 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>你好,CodeLab!</h1>
+    <p id="out">已点击 0 次</p>
+    <button onclick="hit()">点我</button>
+  </div>
+<script>
+  let n = 0;
+  function hit() {
+    document.getElementById('out').textContent = '已点击 ' + (++n) + ' 次';
+  }
+<\/script>
+</body>
+</html>
+`,
+};
+
+/* ---------------- 语法高亮规则 ---------------- */
+const SYNTAX = {
+python: [
+  ["str",  /(?:[rbuf]{0,2})"""[\s\S]*?"""|(?:[rbuf]{0,2})'''[\s\S]*?'''|(?:[rbuf]{0,2})"(?:\\.|[^"\\\n])*"|(?:[rbuf]{0,2})'(?:\\.|[^'\\\n])*'/],
+  ["com",  /#.*/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F_]+|0[bB][01_]+|\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?)\b/],
+  ["kw",   /\b(?:def|class|if|elif|else|for|while|return|import|from|as|with|try|except|finally|raise|lambda|yield|global|nonlocal|pass|break|continue|and|or|not|in|is|None|True|False|async|await|del|assert|match|case)\b/],
+  ["bi",   /\b(?:print|len|range|input|int|str|float|bool|list|dict|set|tuple|open|sorted|sum|min|max|abs|enumerate|zip|map|filter|type|isinstance|super|self|repr|round|any|all|divmod|hex|bin|oct|ord|chr|format|iter|next)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+javascript: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*(?:[eE][+-]?\d+)?)\b/],
+  ["kw",   /\b(?:let|const|var|function|class|if|else|for|while|do|return|switch|case|break|continue|new|delete|typeof|instanceof|in|of|this|super|extends|implements|interface|type|enum|export|import|from|as|default|async|await|try|catch|finally|throw|yield|static|get|set|null|undefined|true|false|void)\b/],
+  ["bi",   /\b(?:console|Math|JSON|Object|Array|String|Number|Boolean|Promise|Map|Set|Symbol|Date|RegExp|Error|document|window|fetch|setTimeout|setInterval|globalThis|process|require)\b/],
+  ["fn",   /\b[A-Za-z_$][\w$]*(?=\s*\()/],
+],
+c: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["pre",  /#\s*(?:include|define|ifndef|endif|ifdef|pragma|undef|error|elif)\b.*$/m],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*[fFuUlL]*)\b/],
+  ["kw",   /\b(?:int|char|float|double|void|long|short|signed|unsigned|struct|union|enum|typedef|const|static|extern|register|volatile|inline|sizeof|return|if|else|for|while|do|switch|case|break|continue|goto|default)\b/],
+  ["bi",   /\b(?:printf|scanf|puts|putchar|getchar|malloc|calloc|realloc|free|memcpy|memset|strlen|strcpy|strcmp|strcat|fopen|fclose|fprintf|sprintf|snprintf|fprintf|size_t|FILE)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+cpp: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["pre",  /#\s*(?:include|define|ifndef|endif|ifdef|pragma|undef|error|elif)\b.*$/m],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*[fFuUlL]*)\b/],
+  ["kw",   /\b(?:int|char|float|double|void|long|short|signed|unsigned|struct|union|enum|typedef|const|static|extern|inline|sizeof|return|if|else|for|while|do|switch|case|break|continue|goto|default|new|delete|this|class|public|private|protected|virtual|override|namespace|using|template|typename|try|catch|throw|operator|friend|mutable|explicit|constexpr|nullptr|true|false|auto)\b/],
+  ["bi",   /\b(?:std|cout|cin|cerr|endl|string|vector|map|set|queue|stack|pair|array|deque|list|sort|find|max_element|min_element|push_back|pop_back|size|begin|end|printf|scanf|malloc|free|size_t)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+java: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["pre",  /@\w+/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*[fFdDlL]?)\b/],
+  ["kw",   /\b(?:public|private|protected|class|interface|extends|implements|static|final|void|int|long|double|float|boolean|char|byte|short|var|new|return|if|else|for|while|do|switch|case|break|continue|throw|throws|try|catch|finally|this|super|null|true|false|import|package|enum|abstract|instanceof|synchronized|volatile|transient)\b/],
+  ["bi",   /\b(?:System|out|println|print|String|Math|Integer|Double|List|ArrayList|Map|HashMap|Set|HashSet|Scanner|Exception|RuntimeException|Optional|Stream|main)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+go: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`[^`]*`/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*)\b/],
+  ["kw",   /\b(?:func|package|import|var|const|type|struct|interface|map|chan|go|defer|if|else|for|range|switch|case|default|break|continue|return|select|fallthrough|goto|nil|true|false|iota|string|int|int8|int16|int32|int64|uint|uint8|uint32|uint64|float32|float64|bool|byte|rune|error)\b/],
+  ["bi",   /\b(?:fmt|Println|Printf|Sprintf|Scanf|Errorf|main|make|new|len|cap|append|copy|delete|panic|recover)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+rust: [
+  ["str",  /"(?:\\.|[^"\\\n])*"/],
+  ["com",  /\/\/.*|\/\*[\s\S]*?\*\//],
+  ["pre",  /#\[[^\]]*\]|#!\[[^\]]*\]/],
+  ["macro",/\b[a-zA-Z_]\w*!/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d[\d_]*\.?\d*(?:[iuf](?:8|16|32|64|size))?)\b/],
+  ["kw",   /\b(?:fn|let|mut|const|static|struct|enum|trait|impl|for|while|loop|if|else|match|return|break|continue|use|mod|pub|crate|self|super|in|as|dyn|ref|move|where|unsafe|async|await|type|true|false|Some|None|Ok|Err|Box|Vec|String|u8|u16|u32|u64|usize|i8|i16|i32|i64|isize|f32|f64|bool|char|str)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+php: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/],
+  ["com",  /\/\/.*|#.*|\/\*[\s\S]*?\*\//],
+  ["pre",  /<\?php|\?>/],
+  ["var",  /\$\w+/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*)\b/],
+  ["kw",   /\b(?:function|echo|print|if|else|elseif|for|foreach|while|return|class|new|public|private|protected|static|const|namespace|use|extends|implements|try|catch|throw|null|true|false|array|isset|unset|empty|global|require|require_once|include|include_once|instanceof)\b/],
+  ["bi",   /\b(?:strlen|count|str_replace|implode|explode|array_map|array_filter|in_array|array_keys|array_values|sprintf|printf|var_dump|print_r|json_encode|json_decode|date|time)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+ruby: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'/],
+  ["com",  /#.*/],
+  ["var",  /[@$]\w+|\b[A-Z]\w*\b/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*)\b/],
+  ["kw",   /\b(?:def|end|if|elsif|else|unless|while|until|for|in|do|return|break|next|redo|class|module|require|require_relative|begin|rescue|ensure|raise|yield|case|when|then|and|or|not|nil|true|false|self|attr_accessor|attr_reader|attr_writer|puts|print|p)\b/],
+  ["fn",   /\b[a-z_]\w*(?=\s*[(!])/],
+],
+lua: [
+  ["str",  /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|\[\[[\s\S]*?\]\]/],
+  ["com",  /--\[\[[\s\S]*?\]\]|--.*/],
+  ["num",  /\b(?:0[xX][0-9a-fA-F]+|\d+\.?\d*)\b/],
+  ["kw",   /\b(?:function|local|end|if|then|else|elseif|for|while|do|return|break|repeat|until|in|and|or|not|nil|true|false)\b/],
+  ["bi",   /\b(?:print|pairs|ipairs|type|tostring|tonumber|table|string|math|io|os|require|setmetatable|getmetatable|pcall|error|assert|select|next|rawget|rawset|unpack)\b/],
+  ["fn",   /\b[A-Za-z_]\w*(?=\s*\()/],
+],
+bash: [
+  ["str",  /"(?:\\.|[^"\\])*"|'[^']*'/],
+  ["com",  /#.*/],
+  ["var",  /\$\{[^}]*\}|\$\w+|\$[@#?*$!]/],
+  ["num",  /\b\d+\b/],
+  ["kw",   /\b(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|in|function|select|break|continue|return|exit|local|export|readonly|declare|unset|shift|source|trap)\b/],
+  ["bi",   /\b(?:echo|printf|read|cd|ls|grep|sed|awk|cat|cp|mv|rm|mkdir|rmdir|touch|chmod|chown|test|eval|exec|which|whoami|date|sleep)\b|\bcc\b|\bgcc\b|\bpython\b|\bnode\b/],
+  ["fn",   /\b[a-zA-Z_]\w*(?=\s*\()/],
+],
+powershell: [
+  ["str",  /"(?:\\.|[^"\\])*"|'[^']*'/],
+  ["com",  /<#[\s\S]*?#>|#.*/],
+  ["var",  /\$\w+/],
+  ["num",  /\b\d+\.?\d*\b/],
+  ["kw",   /\b(?:function|if|else|elseif|for|foreach|while|do|switch|return|try|catch|finally|param|begin|process|end|filter|throw|break|continue|in|trap|class|enum)\b/],
+  ["bi",   /\b(?:Write-Host|Write-Output|Write-Error|Get-Content|Set-Content|Get-Item|Set-Item|Get-ChildItem|ForEach-Object|Where-Object|Select-Object|Sort-Object|Measure-Object|Get-Date|Get-Process|Get-Command|Get-Help|Invoke-Expression|Start-Process)\b/],
+  ["fn",   /\b[A-Za-z_-][\w-]*(?=\s+)/],
+],
+web: [
+  ["com",  /<!--[\s\S]*?-->/],
+  ["tag",  /<\/?[a-zA-Z][\w-]*|\/?>|<!DOCTYPE\s+html>/],
+  ["str",  /"[^"]*"|'[^']*'/],
+  ["attr", /[a-zA-Z-]+(?==)/],
+],
+};
+SYNTAX.typescript = SYNTAX.javascript;
+
+function compileRules(rules){
+  return {
+    re: new RegExp(rules.map(r => `(${r[1].source})`).join("|"), "gm"),
+    types: rules.map(r => r[0]),
+  };
+}
+function esc(s){
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function highlight(code, lang){
+  const rules = SYNTAX[lang];
+  if(!rules) return esc(code);
+  const c = rules._c || (rules._c = compileRules(rules));
+  c.re.lastIndex = 0;
+  let out = "", last = 0, m;
+  while((m = c.re.exec(code))){
+    if(m.index > last) out += esc(code.slice(last, m.index));
+    for(let i = 1; i <= c.types.length; i++){
+      if(m[i] !== undefined){
+        out += `<span class="tk-${c.types[i-1]}">${esc(m[i])}</span>`;
+        break;
+      }
+    }
+    last = m.index + m[0].length;
+    if(m[0].length === 0) c.re.lastIndex++;
+  }
+  return out + esc(code.slice(last));
+}
+
+/* ---------------- 全局状态 ---------------- */
+const $ = id => document.getElementById(id);
+const ta = $("code"), hlCode = $("hlCode"), gutter = $("gutter");
+let cur = "python";
+let ENV = null;              // /api/env 结果
+let HAS_BACKEND = false;     // 是否连接本地引擎
+let running = false;
+
+const LS_DRAFT = id => `codelab.draft.${id}`;
+const LS_LAST = "codelab.last";
+
+/* ---------------- toast ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ---------------- 编辑器 ---------------- */
+function renderEditor(){
+  hlCode.innerHTML = highlight(ta.value, cur === "web" ? "web" : cur);
+  const n = ta.value.split("\n").length;
+  if(gutter.childElementCount !== n){
+    let h = "";
+    for(let i = 1; i <= n; i++) h += `<span class="ln">${i}</span>`;
+    gutter.innerHTML = h;
+  }
+}
+ta.addEventListener("input", () => {
+  renderEditor();
+  scheduleSave();
+});
+ta.addEventListener("scroll", () => {
+  $("hl").scrollTop = ta.scrollTop;
+  $("hl").scrollLeft = ta.scrollLeft;
+  gutter.scrollTop = ta.scrollTop;
+});
+
+let saveTimer = null;
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try{ localStorage.setItem(LS_DRAFT(cur), ta.value); }catch(e){}
+  }, 400);
+}
+
+function setLang(id, keepDraft){
+  if(!LANG_BY_ID[id] || id === cur && keepDraft) return;
+  try{ localStorage.setItem(LS_DRAFT(cur), ta.value); }catch(e){}
+  cur = id;
+  try{ localStorage.setItem(LS_LAST, id); }catch(e){}
+  const draft = keepDraft ? null : localStorage.getItem(LS_DRAFT(id));
+  ta.value = draft !== null && draft !== undefined ? draft : (TEMPLATES[id] || "");
+  const L = LANG_BY_ID[id];
+  $("curLangName").textContent = L.name;
+  updateLangHead();
+  document.querySelectorAll(".lang-item").forEach(el =>
+    el.classList.toggle("active", el.dataset.id === id));
+  renderEditor();
+  ta.scrollTop = 0; ta.scrollLeft = 0;
+  $("hl").scrollTop = 0; $("hl").scrollLeft = 0;
+  gutter.scrollTop = 0;
+  ta.focus();
+}
+function updateLangHead(){
+  const info = ENV && ENV.items ? ENV.items.find(i => i.id === cur) : null;
+  const L = LANG_BY_ID[cur];
+  let ver = "";
+  if(cur === "web") ver = "纯浏览器预览,无需安装";
+  else if(HAS_BACKEND){
+    if(info && info.available) ver = info.version;
+    else ver = "未安装 — 点「⚙ 环境」查看安装命令";
+  } else {
+    if(cur === "python") ver = "浏览器内核 (Pyodide / WASM)";
+    else if(cur === "javascript" || cur === "typescript") ver = "浏览器直接运行";
+    else ver = "需要本地版(见 README)";
+  }
+  $("curLangVer").textContent = ver;
+  $("runModeHint").textContent = HAS_BACKEND
+    ? "引擎: 本机 " + (info && info.bin ? info.bin : "")
+    : "引擎: 浏览器";
+}
+
+ta.addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); runCode(); return; }
+  if(e.key === "Tab"){
+    e.preventDefault();
+    if(ta.selectionStart !== ta.selectionEnd){ indentSelection(e.shiftKey); }
+    else if(e.shiftKey){ indentSelection(true); }
+    else insertText("    ");
+    return;
+  }
+  if(e.key === "Enter" && !e.isComposing){
+    e.preventDefault();
+    const s = ta.selectionStart;
+    const v = ta.value;
+    const ls = v.lastIndexOf("\n", s - 1) + 1;
+    const line = v.slice(ls, s);
+    const ind = (line.match(/^[ \t]*/) || [""])[0];
+    const extra = /[:{[(]\s*$/.test(line.trimEnd()) ? "    " : "";
+    insertText("\n" + ind + extra);
+  }
+});
+function insertText(text){
+  let ok = false;
+  try{ ok = document.execCommand("insertText", false, text); }catch(e){}
+  if(!ok){
+    const s = ta.selectionStart, epos = ta.selectionEnd;
+    ta.setRangeText(text, s, epos, "end");
+    ta.dispatchEvent(new Event("input"));
+  }
+}
+function indentSelection(dedent){
+  const v = ta.value;
+  let s = ta.selectionStart, epos = ta.selectionEnd;
+  const ls = v.lastIndexOf("\n", s - 1) + 1;
+  const out = v.slice(ls, epos).split("\n")
+    .map(l => dedent ? l.replace(/^ {1,4}/, "") : "    " + l)
+    .join("\n");
+  ta.setSelectionRange(ls, epos);
+  let ok = false;
+  try{ ok = document.execCommand("insertText", false, out); }catch(e){}
+  if(!ok){
+    ta.setRangeText(out, ls, epos, "end");
+    ta.dispatchEvent(new Event("input"));
+  }
+  const delta = out.length - (epos - ls);
+  const caret = s === epos ? s + delta : ls + out.length;
+  ta.setSelectionRange(caret, caret);
+  renderEditor();
+  scheduleSave();
+}
+
+/* ---------------- 语言侧栏 ---------------- */
+function buildSidebar(){
+  const box = $("langList");
+  box.innerHTML = LANGS.map(L => {
+    const it = ENV && ENV.items ? ENV.items.find(i => i.id === L.id) : null;
+    let st = "unknown";
+    if(L.id === "web") st = "on";
+    else if(HAS_BACKEND && it) st = it.available ? "on" : "off";
+    else if(!HAS_BACKEND) st = ["python","javascript","typescript"].includes(L.id) ? "on" : "off";
+    return `<div class="lang-item${L.id === cur ? " active" : ""}" data-id="${L.id}" title="${L.name}">
+      <span class="bicon${L.dk ? " dk" : ""}" style="background:${L.color}">${L.badge}</span>
+      <span class="nm">${L.name}</span>
+      <span class="st ${st}"></span>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".lang-item").forEach(el =>
+    el.addEventListener("click", () => setLang(el.dataset.id)));
+}
+
+/* ---------------- 运行 ---------------- */
+async function runCode(){
+  if(running) return;
+  const code = ta.value;
+  const stdinData = $("stdinTa").value;
+
+  if(cur === "web"){
+    $("prevFrame").srcdoc = code;
+    switchTab("prev");
+    sysLine(`✓ 预览已生成 · ${nowStr()}`, "ok");
+    return;
+  }
+
+  running = true;
+  switchTab("out");
+  $("btnRun").disabled = true;
+  $("btnRun").innerHTML = "⏳ 运行中…";
+  const t0 = performance.now();
+  try{
+    if(cur === "javascript" && !HAS_BACKEND){
+      await runJsBrowser(code);
+    } else if(cur === "typescript" && !(HAS_BACKEND && envOf("typescript").available)){
+      await runTsBrowser(code);
+    } else if(cur === "python" && !HAS_BACKEND){
+      await runPyodide(code);
+    } else if(!HAS_BACKEND){
+      sysLine(`✗ ${LANG_BY_ID[cur].name} 需要本地引擎:双击项目里的 start.bat 启动后使用`, "bad");
+    } else {
+      await runBackend(code, stdinData);
+    }
+  }catch(err){
+    sysLine("✗ 运行失败: " + (err && err.message ? err.message : String(err)), "bad");
+  }finally{
+    running = false;
+    $("btnRun").disabled = false;
+    $("btnRun").innerHTML = "▶ 运行<kbd>Ctrl+↵</kbd>";
+    console.debug("耗时", Math.round(performance.now() - t0), "ms");
+  }
+}
+
+function envOf(id){
+  return (ENV && ENV.items ? ENV.items.find(i => i.id === id) : null) || {available:false};
+}
+
+async function runBackend(code, stdinData){
+  const it = envOf(cur);
+  if(!it.available){
+    sysLine(`✗ 本机未检测到 ${LANG_BY_ID[cur].name} 环境`, "bad");
+    if(INSTALL[cur]) sysCmd("安装命令", INSTALL[cur]);
+    openEnv();
+    return;
+  }
+  const r = await fetch("/api/run", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      lang: cur, code, stdin: stdinData,
+      timeout: parseInt($("timeoutSel").value, 10) || 10,
+    }),
+  }).then(x => x.json());
+
+  if(!r.ok){
+    sysLine("✗ " + (r.message || "运行失败"), "bad");
+    if(r.install) sysCmd("安装命令", r.install);
+    return;
+  }
+  const sec = [];
+  if(r.compile_error){
+    sec.push(`<span class="bad">✗ 编译失败</span> · ${r.duration_ms} ms`);
+  }else if(r.timed_out){
+    sec.push(`<span class="bad">⏱ 超时被终止</span>(超过 ${$("timeoutSel").value} 秒)`);
+  }else{
+    sec.push(`<span class="${r.exit_code === 0 ? "ok" : "bad"}">${r.exit_code === 0 ? "✓ 运行完成" : "✗ 退出码 " + r.exit_code}</span> · ${r.duration_ms} ms`);
+  }
+  sysHtml(sec.join(" · "), false);
+
+  const hasOut = r.stdout && r.stdout.length;
+  const hasErr = r.stderr && r.stderr.length;
+  if(hasOut) outBlock(r.stdout, "o-out");
+  if(hasErr){
+    if(r.compile_error) sysCmd("编译器输出", r.stderr);
+    else outBlock(r.stderr, "o-err");
+  }
+  if(!hasOut && !hasErr && !r.compile_error) outBlock("(无输出)", "o-out", true);
+}
+
+/* 浏览器执行 JS(无后端时) */
+async function runJsBrowser(code){
+  const lines = [];
+  const fmt = (...a) => a.map(v => {
+    if(typeof v === "object") { try{ return JSON.stringify(v, null, 2) ?? String(v); }catch(e){ return String(v); } }
+    return String(v);
+  }).join(" ");
+  const cs = {
+    log:(...a)=>lines.push([fmt(...a),"o-out"]), info:(...a)=>lines.push([fmt(...a),"o-out"]),
+    warn:(...a)=>lines.push([fmt(...a),"o-err"]), error:(...a)=>lines.push([fmt(...a),"o-err"]),
+  };
+  sysLine("✓ 浏览器内核执行 · " + nowStr(), "ok");
+  try{
+    new Function("console","alert","prompt", code)(
+      cs, m=>lines.push([String(m),"o-out"]), ()=>lines.push(["(prompt 不可用)","o-err"]));
+  }catch(err){
+    lines.push([err.stack || String(err), "o-err"]);
+  }
+  lines.forEach(([t, c]) => outBlock(t, c));
+  if(!lines.length) outBlock("(无输出)", "o-out", true);
+}
+
+/* TS 在线转译后浏览器执行 */
+async function runTsBrowser(code){
+  sysLine("⏳ 正在线加载 TypeScript 编译器(cdn.jsdelivr.net)…", null);
+  await loadScript("https://cdn.jsdelivr.net/npm/typescript@5.5.4/lib/typescript.min.js");
+  const js = window.ts.transpile(code);
+  sysLine("✓ 转译完成,浏览器内核执行", "ok");
+  await runJsBrowser(js);
+}
+
+/* Pyodide(WASM Python,浏览器形态) */
+let pyodidePromise = null;
+function loadPyodideKernel(){
+  if(pyodidePromise) return pyodidePromise;
+  pyodidePromise = (async () => {
+    await loadScript("https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js");
+    return await window.loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.26.4/full/"});
+  })();
+  return pyodidePromise;
+}
+async function runPyodide(code){
+  sysLine("⏳ 首次加载 Python WASM 内核(约 10MB,稍候)…", null);
+  const py = await loadPyodideKernel();
+  const lines = [];
+  py.setStdout({batched: s => lines.push([s, "o-out"])});
+  py.setStderr({batched: s => lines.push([s, "o-err"])});
+  sysLine("✓ Pyodide 内核执行 · Python " + py.version, "ok");
+  try{ await py.runPythonAsync(code); }
+  catch(err){ lines.push([String(err).split("\n").slice(-6).join("\n"), "o-err"]); }
+  lines.forEach(([t, c]) => outBlock(t, c));
+  if(!lines.length) outBlock("(无输出)", "o-out", true);
+}
+
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = res;
+    s.onerror = () => rej(new Error("在线资源加载失败(需要联网): " + src));
+    document.head.appendChild(s);
+  });
+}
+
+/* ---------------- 输出渲染 ---------------- */
+function nowStr(){ return new Date().toLocaleTimeString("zh-CN", {hour12:false}); }
+function switchTab(name){
+  document.querySelectorAll(".ptab").forEach(el =>
+    el.classList.toggle("active", el.dataset.tab === name));
+  document.querySelectorAll(".pbody").forEach(el =>
+    el.classList.toggle("active", el.id === "tab-" + name));
+}
+function sysLine(text, cls, keepOld = true){
+  sysHtml(`<span class="${cls || ""}">${esc(text)}</span>`, keepOld);
+}
+function sysHtml(html, keepOld = true){
+  const box = $("pOut");
+  if(!keepOld) box.innerHTML = "";
+  const ph = $("placeholder"); if(ph) ph.remove();
+  const d = document.createElement("div");
+  d.className = "sysline";
+  d.innerHTML = html;
+  box.appendChild(d);
+  box.parentElement.scrollTop = box.parentElement.scrollHeight;
+}
+function sysCmd(label, cmd){
+  const box = $("pOut");
+  const ph = $("placeholder"); if(ph) ph.remove();
+  const d = document.createElement("div");
+  d.className = "sysline";
+  d.innerHTML = `<span>${esc(label)}:</span> <code class="cmd">${esc(cmd)}</code>
+    <button class="copy-cmd" data-cmd="${esc(cmd)}">复制</button>`;
+  box.appendChild(d);
+  d.querySelector("button").addEventListener("click", ev =>
+    copyText(ev.target.dataset.cmd));
+  box.parentElement.scrollTop = box.parentElement.scrollHeight;
+}
+function outBlock(text, cls, dim){
+  const box = $("pOut");
+  const ph = $("placeholder"); if(ph) ph.remove();
+  const d = document.createElement("div");
+  d.className = cls + (dim ? "" : " pre");
+  if(dim) d.style.color = "#5b6478";
+  d.textContent = text;
+  box.appendChild(d);
+  box.parentElement.scrollTop = box.parentElement.scrollHeight;
+}
+function copyText(t){
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject())
+    .then(() => toast("已复制"))
+    .catch(() => {
+      const x = document.createElement("textarea");
+      x.value = t; document.body.appendChild(x); x.select();
+      try{ document.execCommand("copy"); toast("已复制"); }catch(e){ toast("复制失败"); }
+      x.remove();
+    });
+}
+
+/* ---------------- 环境面板 ---------------- */
+function openEnv(){ $("envPanel").classList.add("open"); renderEnvList(); }
+function closeEnv(){ $("envPanel").classList.remove("open"); }
+
+function renderEnvList(){
+  const list = $("envList");
+  if(!ENV || !ENV.items){ list.innerHTML = `<div style="padding:20px;color:var(--dim)">检测中…</div>`; return; }
+  $("envCnt").textContent = `本地引擎: ${ENV.ok_count}/${ENV.items.length} 可用 · 检测于 ${ENV.ts}`;
+  list.innerHTML = ENV.items.map(it => {
+    const L = LANG_BY_ID[it.id] || {badge:"?", color:"#666", name:it.name};
+    const ver = it.available
+      ? esc(it.version || "已安装")
+      : (it.note ? `<span class="note">${esc(it.note)}</span>` : `<span class="miss">未安装</span>`);
+    const cmd = it.install || INSTALL[it.id] || "";
+    return `<div class="env-item">
+      <span class="bicon${L.dk ? " dk" : ""}" style="background:${L.color}">${L.badge}</span>
+      <div class="info">
+        <div class="en">${esc(it.name)}</div>
+        <div class="ev${it.available ? "" : " miss"}" ${it.bin ? `title="${esc(it.bin)}"` : ""}>${ver}</div>
+      </div>
+      ${cmd && !it.available ? `<button class="copy-cmd" data-cmd="${esc(cmd)}">复制安装命令</button>` : ""}
+    </div>`;
+  }).join("") + (LANGS.some(l => l.id === "web") ? "" : "");
+  list.querySelectorAll("button.copy-cmd").forEach(b =>
+    b.addEventListener("click", () => copyText(b.dataset.cmd)));
+}
+
+async function fetchEnv(refresh){
+  try{
+    const r = await fetch("/api/env" + (refresh ? "?refresh=1" : ""));
+    ENV = await r.json();
+    HAS_BACKEND = true;
+    $("backendDot").className = "dot on";
+    $("backendText").textContent = `本地引擎已连接 · ${ENV.ok_count} 种语言可用`;
+  }catch(e){
+    ENV = null;
+    HAS_BACKEND = false;
+    $("backendDot").className = "dot warn";
+    $("backendText").innerHTML =
+      '纯浏览器模式 · <a href="https://github.com/Hayden-H-cmyht/code-lab" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">⬇ 下载完整版(跑全部语言)</a>';
+  }
+  buildSidebar();
+  updateLangHead();
+  if($("envPanel").classList.contains("open")) renderEnvList();
+}
+
+/* ---------------- AI Agent 中心 ---------------- */
+const AGENT_CATS = [
+  {id:"cli",   name:"终端 Agent"},
+  {id:"ide",   name:"IDE 集成"},
+  {id:"local", name:"本地模型"},
+  {id:"frame", name:"框架 / 低代码"},
+];
+const AGENTS = [
+  {cat:"cli", badge:"CC", color:"#d97757", name:"Claude Code", org:"Anthropic",
+   desc:"终端编程 Agent 天花板:复杂重构、首次通过率、SWE-bench 领先,1M 上下文 + Hook / MCP 生态。Pro $20/月,Max $100-200/月。",
+   tags:["SOTA","付费为主","MCP"], site:"https://claude.com/claude-code",
+   install:"npm install -g @anthropic-ai/claude-code",
+   alt:"irm https://claude.ai/install.ps1 | iex",
+   steps:["运行 claude 首次登录 Anthropic 账号(或设 ANTHROPIC_API_KEY 环境变量)","cd 到项目目录执行 claude 开始会话","用 /init 生成项目级 CLAUDE.md 记忆,后续会话自动带上"]},
+  {cat:"cli", badge:"CX", color:"#10a37f", name:"Codex CLI", org:"OpenAI",
+   desc:"GPT-5.5 驱动,沙箱执行与后端任务见长;ChatGPT 订阅(Plus/Pro)自带额度,订阅党性价比最优解。",
+   tags:["订阅含额度","沙箱"], site:"https://github.com/openai/codex",
+   install:"npm install -g @openai/codex",
+   steps:["codex 首次运行用 ChatGPT 账号登录(或设 OPENAI_API_KEY)","codex \"任务描述\" 或直接进交互模式","审批模式下逐步确认 AI 的文件改动,安全可控"]},
+  {cat:"cli", badge:"GM", color:"#4285f4", name:"Gemini CLI", org:"Google",
+   desc:"免费额度最大方:登录 Google 账号每天 1000 次请求(60 次/分钟),Gemini 3 + 1M 上下文,零成本入门首选。",
+   tags:["免费额度大","开源"], site:"https://github.com/google-gemini/gemini-cli",
+   install:"npm install -g @google/gemini-cli",
+   steps:["gemini 启动并用 Google 账号登录即享免费档","个人 API key 可解锁更高限额","支持 GEMINI.md 项目上下文与 MCP 扩展"]},
+  {cat:"cli", badge:"OC", color:"#f59e0b", name:"OpenCode", org:"SST(开源)",
+   desc:"开源终端 Agent 领头羊(约 199k star,超过 Claude Code),Provider 无关——任意厂商任意模型都能接,TUI 体验好。",
+   tags:["开源","多模型"], site:"https://opencode.ai",
+   install:"npm install -g opencode-ai@latest",
+   steps:["opencode 启动终端 TUI","/models 选择模型,配 API key 或走 OAuth","opencode run \"任务\" 可脚本化批量执行"]},
+  {cat:"cli", badge:"QW", color:"#615ced", name:"Qwen Code", org:"阿里通义(开源)",
+   desc:"Apache 2.0 开源终端 Agent(基于 Gemini CLI 分支),中文任务友好;Qwen OAuth 登录每天免费 2000 次请求。",
+   tags:["开源","国产","免费额度"], site:"https://github.com/QwenLM/qwen-code",
+   install:"npm install -g @qwen-code/qwen-code",
+   steps:["qwen 启动,Qwen OAuth 登录免费 2000 请求/天","或设 DASHSCOPE_API_KEY 用通义 API","支持自定义 base_url 接任何 OpenAI 兼容接口"]},
+  {cat:"cli", badge:"AI", color:"#50a025", name:"Aider", org:"开源",
+   desc:"老牌 AI 结对编程:git 自动提交、可接 75+ 模型、省钱灵活;官方维护放缓,活跃社区分支 aider-ce 值得关注。",
+   tags:["开源","自带key"], site:"https://aider.chat",
+   install:"python -m pip install aider-chat",
+   steps:["设模型 key,如 OPENAI_API_KEY 或 ANTHROPIC_API_KEY","项目目录运行 aider,/add 文件后提需求","每次修改自动 git commit,可随时回滚"]},
+  {cat:"ide", badge:"CL", color:"#00b8d9", name:"Cline", org:"开源(VSCode 扩展)",
+   desc:"VSCode 里的自主 Agent:计划/执行双模式、能开浏览器操作、MCP 市场即插即用;用自己 API key 按 token 付费。",
+   tags:["开源","VSCode","MCP"], site:"https://cline.bot",
+   install:"code --install-extension saoudrizwan.claude-dev",
+   steps:["VSCode 侧栏打开 Cline 图标","选 Provider 填 API key,或指向本地 Ollama/LM Studio","Auto-approve 开关按需控制自动改文件/跑命令"]},
+  {cat:"ide", badge:"GP", color:"#5b6b8c", name:"GitHub Copilot", org:"GitHub / Microsoft",
+   desc:"补全 + Chat + Agent 模式全家桶;GitHub 学生认证后 Pro 免费,学生党零成本首选,补全体验依然最强。",
+   tags:["学生免费","补全最强"], site:"https://github.com/features/copilot",
+   install:"VSCode 扩展市场搜索 GitHub Copilot 安装",
+   steps:["VSCode 登录 GitHub 账号即可试用","学生走 GitHub Education 认证(education.github.com)免费用 Pro","Agent 模式(Ctrl+Shift+I)可跨多文件执行任务"]},
+  {cat:"ide", badge:"CU", color:"#3b4764", name:"Cursor", org:"Anysphere",
+   desc:"AI 原生编辑器(VSCode 分叉):Tab 补全、Chat、Composer 多文件 Agent 三件套;免费档含少量高级模型请求。",
+   tags:["AI原生IDE"], site:"https://cursor.com",
+   install:"winget install Anysphere.Cursor",
+   steps:["安装后一键导入 VSCode 扩展与配置","登录账号,免费档每月有限高级请求","Composer 批量改代码,Tab 逐行接受补全"]},
+  {cat:"local", badge:"OL", color:"#6b7280", name:"Ollama", org:"开源",
+   desc:"一行命令在本地跑开源模型(Qwen3 / Llama / GLM / DeepSeek 等),完全离线;11434 端口提供 OpenAI 兼容 API,可给 Aider/Cline 当免费大脑。",
+   tags:["离线","免费"], site:"https://ollama.com",
+   install:"winget install Ollama.Ollama",
+   steps:["ollama pull qwen3:8b 拉模型(按显存选参数量)","ollama run qwen3:8b 直接本地对话","Aider/Cline 里把 base_url 指到 http://localhost:11434 即可零成本接入"]},
+  {cat:"local", badge:"LM", color:"#7c3aed", name:"LM Studio", org:"Local AI",
+   desc:"本地模型 GUI 神器:搜索/下载/聊天/开服务全图形化,Developer 页一键开 OpenAI 兼容服务,不想敲命令就从这开始。",
+   tags:["GUI","离线"], site:"https://lmstudio.ai",
+   install:"官网下载安装包(或 winget search LM Studio)",
+   steps:["内置搜索下载 GGUF 模型","Developer 标签页 Start Server(默认 localhost:1234)","各类 Agent/代码工具把 base_url 指过去即可"]},
+  {cat:"frame", badge:"LG", color:"#2e7d6b", name:"LangGraph", org:"LangChain",
+   desc:"用图结构编排自己的 Agent(状态机 / 循环 / 人工审核节点),生产级 Python/JS 框架,做可控的复杂工作流首选。",
+   tags:["Python","生产级"], site:"https://langchain-ai.github.io/langgraph/",
+   install:"pip install -U langgraph",
+   steps:["定义 StateGraph:节点(步骤)+ 边(流转)","模型 key 走 langchain 各 Provider 集成","langgraph dev 起本地调试 UI 逐步可视化"]},
+  {cat:"frame", badge:"CW", color:"#ff5c5c", name:"CrewAI", org:"开源",
+   desc:"多角色协作框架:定义研究员 / 写手 / 审查等角色分工完成一个任务,比 LangGraph 上手简单,适合快速搭多 Agent 流水线。",
+   tags:["Python","多角色"], site:"https://docs.crewai.com",
+   install:"pip install crewai crewai-tools",
+   steps:["crewai create crew my_project 生成项目骨架",".env 里填模型 API key","crewai run 跑通多角色协作流水线"]},
+  {cat:"frame", badge:"DF", color:"#1677ff", name:"Dify", org:"开源(自部署)",
+   desc:"开源 LLM 应用平台:可视化编排工作流 / RAG / Agent,一键发布成 API 与网页;想搭 AI 服务而不只是写代码时用它。",
+   tags:["开源自部署","可视化"], site:"https://dify.ai",
+   install:"git clone https://github.com/langgenius/dify && cd dify/docker && docker compose up -d",
+   steps:["先装 Docker Desktop(需 WSL2)","浏览器打开 http://localhost:80 设置管理员","画布拖拽编排工作流,发布为 API / WebApp"]},
+  {cat:"frame", badge:"N8", color:"#ea4b71", name:"n8n", org:"开源(自部署)",
+   desc:"节点式自动化平台 + AI Agent 节点,400+ 应用集成;自部署免费,适合做个人自动化(如定时抓取→AI 处理→推送)。",
+   tags:["自动化","低代码"], site:"https://n8n.io",
+   install:"npx n8n",
+   steps:["Node 18+ 直接 npx n8n,数据全存本地","浏览器打开 http://localhost:5678 建工作流","AI Agent 节点配任意模型 key,触发器定时/钩子都行"]},
+];
+let agCat = "all", agQ = "";
+
+function renderAgentCats(){
+  const box = $("agCats");
+  const cats = [{id:"all", name:"全部 " + AGENTS.length}].concat(AGENT_CATS);
+  box.innerHTML = cats.map(c =>
+    `<div class="ag-cat${c.id === agCat ? " active" : ""}" data-cat="${c.id}">${c.name}</div>`).join("");
+  box.querySelectorAll(".ag-cat").forEach(el =>
+    el.addEventListener("click", () => { agCat = el.dataset.cat; renderAgentCats(); renderAgents(); }));
+}
+function renderAgents(){
+  const list = $("agList");
+  const q = agQ.trim().toLowerCase();
+  const items = AGENTS.filter(a =>
+    (agCat === "all" || a.cat === agCat) &&
+    (!q || (a.name + " " + a.org + " " + a.desc + " " + a.tags.join(" ")).toLowerCase().includes(q)));
+  if(!items.length){ list.innerHTML = `<div class="ag-empty">没有匹配的工具</div>`; return; }
+  list.innerHTML = items.map(a => {
+    const tags = a.tags.map(t =>
+      `<span class="ag-tag${t.includes("免费") ? " hl" : ""}">${esc(t)}</span>`).join("");
+    const alt = a.alt ? `
+      <div class="ag-cmd"><span class="lbl">或</span><code>${esc(a.alt)}</code>
+        <button data-cmd="${esc(a.alt)}">复制</button></div>` : "";
+    const steps = `<ol class="ag-steps">${a.steps.map(s => `<li>${s}</li>`).join("")}</ol>`;
+    return `<div class="ag-card">
+      <div class="top">
+        <span class="bicon" style="background:${a.color}">${a.badge}</span>
+        <div><b>${esc(a.name)}</b><div class="org">${esc(a.org)}</div></div>
+        <a href="${a.site}" target="_blank" rel="noopener">官网 ↗</a>
+      </div>
+      <div class="desc">${esc(a.desc)}</div>
+      <div class="ag-tags">${tags}</div>
+      <div class="ag-cmd"><code>${esc(a.install)}</code><button data-cmd="${esc(a.install)}">复制</button></div>
+      ${alt}${steps}
+    </div>`;
+  }).join("");
+  list.querySelectorAll("button[data-cmd]").forEach(b =>
+    b.addEventListener("click", () => copyText(b.dataset.cmd)));
+}
+function openAgents(){
+  $("agentsMask").classList.add("show");
+  renderAgentCats();
+  renderAgents();
+}
+$("btnAgents").addEventListener("click", openAgents);
+$("agClose").addEventListener("click", () => $("agentsMask").classList.remove("show"));
+$("agentsMask").addEventListener("click", e => {
+  if(e.target === e.currentTarget) $("agentsMask").classList.remove("show");
+});
+$("agSearch").addEventListener("input", e => { agQ = e.target.value; renderAgents(); });
+
+/* ---------------- 面板交互 ---------------- */
+document.querySelectorAll(".ptab[data-tab]").forEach(el =>
+  el.addEventListener("click", () => switchTab(el.dataset.tab)));
+$("btnClear").addEventListener("click", () => {
+  $("pOut").innerHTML = `<div id="placeholder">输出已清空</div>`;
+});
+$("btnFold").addEventListener("click", () => {
+  const p = $("panel");
+  p.classList.toggle("folded");
+  $("btnFold").textContent = p.classList.contains("folded") ? "▴" : "▾";
+});
+$("btnRun").addEventListener("click", runCode);
+$("btnEnv").addEventListener("click", () => {
+  const open = $("envPanel").classList.toggle("open");
+  if(open) renderEnvList();
+});
+$("btnEnvClose").addEventListener("click", closeEnv);
+$("btnEnvRefresh").addEventListener("click", async () => {
+  $("btnEnvRefresh").textContent = "检测中…";
+  await fetchEnv(true);
+  $("btnEnvRefresh").textContent = "刷新检测";
+  toast("环境检测完成: " + (ENV ? ENV.ok_count + " 种语言可用" : "本地引擎未连接"));
+});
+$("btnReset").addEventListener("click", () => {
+  if(confirm("恢复当前语言的示例代码?当前内容将被覆盖(可先复制保存)。")){
+    ta.value = TEMPLATES[cur] || "";
+    renderEditor(); scheduleSave();
+  }
+});
+$("timeoutSel").addEventListener("change", () => {
+  try{ localStorage.setItem("codelab.timeout", $("timeoutSel").value); }catch(e){}
+});
+
+/* 拖拽调整面板高度 */
+(function(){
+  const bar = $("dragbar"), panel = $("panel");
+  let dragging = false;
+  bar.addEventListener("mousedown", e => { dragging = true; e.preventDefault(); });
+  document.addEventListener("mousemove", e => {
+    if(!dragging) return;
+    const h = window.innerHeight - e.clientY - 8;
+    const px = Math.max(120, Math.min(window.innerHeight * 0.7, h));
+    panel.style.setProperty("--panelH", px + "px");
+    panel.style.height = px + "px";
+  });
+  document.addEventListener("mouseup", () => dragging = false);
+})();
+
+document.addEventListener("keydown", e => {
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter"){ e.preventDefault(); runCode(); }
+  if(e.key === "Escape"){ closeEnv(); $("agentsMask").classList.remove("show"); }
+});
+
+/* ---------------- 启动 ---------------- */
+(function init(){
+  try{
+    const t = localStorage.getItem("codelab.timeout");
+    if(t) $("timeoutSel").value = t;
+  }catch(e){}
+  let last = null;
+  try{ last = localStorage.getItem(LS_LAST); }catch(e){}
+  cur = LANG_BY_ID[last] ? last : "python";
+  const draft = localStorage.getItem(LS_DRAFT(cur));
+  ta.value = draft !== null && draft !== undefined ? draft : (TEMPLATES[cur] || "");
+  $("curLangName").textContent = LANG_BY_ID[cur].name;
+  renderEditor();
+  buildSidebar();
+  updateLangHead();
+  fetchEnv(false);
+})();
+</script>
+</body>
+</html>
