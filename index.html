@@ -297,7 +297,7 @@ git --version     # 缺: winget install Git.Git</pre>
     <pre>cd D:\zcode\code-lab
 powershell -ExecutionPolicy Bypass -File .\install_agents.ps1
 # 常用参数:
-#   -List                  只列出 26 款及安装状态
+#   -List                  只列出 28 款及安装状态
 #   -Agents kimi,cursor    按名称/关键词安装
 #   -All                   一键装全部(网页型自动开官网)</pre>
     <h4>2 · 网页手动安装</h4>
@@ -328,7 +328,7 @@ powershell -ExecutionPolicy Bypass -File .\install_agents.ps1
       <h3>⚡ 一键自动安装</h3>
       <button id="aiClose">✕</button>
     </div>
-    <p>自动安装脚本会先检查 Node / Python / winget / VSCode 环境, 缺失项自动补装; 然后列出 26 款工具, 选分类 → 勾编号, 一条条自动安装并校验。纯网页型(Trae / LM Studio / Dify / 扣子)会自动打开官网。</p>
+    <p>自动安装脚本会先检查 Node / Python / winget / VSCode 环境, 缺失项自动补装; 然后列出 28 款工具, 选分类 → 勾编号, 一条条自动安装并校验。纯网页型(Trae / LM Studio / Dify / 扣子)会自动打开官网。</p>
     <div class="ai-zone">
       <div class="row"><code id="aiCmd">…</code><button id="aiCopy">复制</button></div>
       <div class="note" id="aiNote"></div>
@@ -1218,6 +1218,11 @@ const AGENTS = [
    install:"npm install -g @anthropic-ai/claude-code",
    alt:"irm https://claude.ai/install.ps1 | iex",
    steps:["运行 claude 首次登录 Anthropic 账号(或设 ANTHROPIC_API_KEY 环境变量)","cd 到项目目录执行 claude 开始会话","用 /init 生成项目级 CLAUDE.md 记忆,后续会话自动带上"]},
+  {cat:"cli", badge:"HM", color:"#d946ef", name:"Hermes Agent", org:"Nous Research(开源)",
+   desc:"开源自主 Agent 领头羊(20万+ star):不止写代码——终端 + Web UI + Telegram/Discord 网关,跨会话记忆 + 能自己写技能,跑得越久越强;支持 20+ 模型(DeepSeek / Qwen / Claude 等),内置浏览器操作、网页搜索、生图、语音等工具。",
+   tags:["开源","自主Agent","多模型"], site:"https://github.com/NousResearch/hermes-agent",
+   install:"iex (irm https://hermes-agent.nousresearch.com/install.ps1)",
+   steps:["运行 hermes setup 走配置向导,选模型厂商(部分支持浏览器 OAuth 免 Key)","hermes 启动终端对话,自动帮你执行终端 / 浏览器任务","hermes gateway setup 可接到 Telegram / Discord 等平台做常驻机器人"]},
   {cat:"cli", badge:"CX", color:"#10a37f", name:"Codex CLI", org:"OpenAI",
    desc:"GPT-5.5 驱动,沙箱执行与后端任务见长;ChatGPT 订阅(Plus/Pro)自带额度,订阅党性价比最优解。",
    tags:["订阅含额度","沙箱"], site:"https://github.com/openai/codex",
@@ -1244,6 +1249,12 @@ const AGENTS = [
    install:"npm install -g @moonshot-ai/kimi-code",
    alt:"irm https://code.kimi.com/kimi-code/install.ps1 | iex",
    steps:["kimi 首次运行输入 /login 选 Kimi Code OAuth 或 API key","cd 项目目录运行 kimi 开始会话","Shift+Tab 进 Plan 模式先出方案再改码,/fork 可分支实验"]},
+  {cat:"cli", badge:"DS", color:"#4d6bfe", name:"DeepSeek Harness", org:"深度求索(官方·开发者预览)",
+   desc:"DeepSeek 官方 Agent 框架,公式 Agent=Model+Harness:一切皆插件(Cordis 内核),模型/工具/技能/沙箱全可替换组合;标准 / 代码 / 最小 / Creator 四档运行模式,全程可追踪,直接对标 Claude Code / Codex。",
+   tags:["国产","官方","插件化"], site:"https://github.com/deepseek-ai/deepseek-harness",
+   install:"npm install -g @deepseek-ai/dsh",
+   alt:"npx @deepseek-ai/dsh web",
+   steps:["先装 Node.js 18+","dsh web 启动 Web UI(或 dsh 直接走 CLI)","配 DeepSeek API key 或任意兼容模型,开始 Agent 会话"]},
   {cat:"cli", badge:"AI", color:"#50a025", name:"Aider", org:"开源",
    desc:"老牌 AI 结对编程:git 自动提交、可接 75+ 模型、省钱灵活;官方维护放缓,活跃社区分支 aider-ce 值得关注。",
    tags:["开源","自带key"], site:"https://aider.chat",
