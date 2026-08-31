@@ -14,9 +14,13 @@
    (Python / JavaScript / TypeScript / C / C++ / Java / Go / Rust / PHP / Ruby /
    Lua / Bash / PowerShell / Perl / R / 网页预览)
 2. **环境部署**:未安装的语言给 winget 一键安装命令,装完刷新即生效
-3. **AI Agent 中心**:Claude Code / Codex / Gemini CLI / OpenCode / Qwen Code /
-   Aider / Cline / Copilot / Cursor / Ollama / LM Studio / LangGraph / CrewAI /
-   Dify / n8n —— 安装命令一键复制 + 三步部署指引(2026-08 现状)
+3. **AI Agent 中心**:Claude Code / Codex CLI / Gemini CLI / OpenCode /
+   Qwen Code / Kimi Code CLI / Aider / Cline / Copilot / Cursor /
+   通义灵码 / Trae / CodeGeeX / 文心快码 / CodeBuddy / 华为云码道 CodeArts /
+   Windsurf / Roo Code / Continue / Ollama / LM Studio / LangGraph / CrewAI /
+   Dify / n8n / 扣子 Coze —— 安装命令一键复制 + 三步部署指引(2026-08 现状);
+   支持 **⚡ 一键自动安装**(`install_agents.ps1`, 自动补装环境 + 批量安装 + 校验)
+   与 **📖 安装教程**(网页弹窗 + `INSTALL_TUTORIAL.md`)
 
 ## 桌面启动端
 
@@ -32,6 +36,12 @@
 - **编辑器**:语法高亮、行号、Tab/Shift+Tab 缩进、自动缩进、Ctrl+Enter 运行、
   每种语言的草稿自动保存(localStorage)
 - **网页预览**:HTML/CSS/JS 三件套 iframe 实时预览
+- **AI Agent 一键自动安装**:Agent 面板点「⚡ 自动安装」复制一条命令, 或在项目目录运行
+  `powershell -ExecutionPolicy Bypass -File .\install_agents.ps1` —— 自动检查并补装
+  Node/Python/winget/VSCode, 选分类勾编号批量安装, 装完自动校验(npm / pip / winget /
+  VSCode 扩展); 支持 `-List` / `-Agents kimi,cursor` / `-All`
+- **AI Agent 安装教程**:Agent 面板点「📖 教程」弹出图文教程(环境检查 → 自动安装 →
+  手动安装 → 登录/配 Key → 常见问题), 完整版见 `INSTALL_TUTORIAL.md`
 - **双形态自适应**:有本地引擎跑全部语言;没有引擎(线上/直接开 html)时
   JS / TS / Python(WASM)/ 网页预览照常可用
 
@@ -47,6 +57,8 @@
 ## API(本地引擎,127.0.0.1:8790 起)
 
 - `GET  /api/env` — 环境检测;`?refresh=1` 强制重新扫描
+- `GET  /install_agents.ps1` — 自动安装脚本(供「⚡ 自动安装」一键命令下载)
+- `GET  /install_tutorial.md` — 安装教程文档(可下载)
 - `POST /api/run` — body: `{lang, code, stdin, timeout(秒)}`
   返回 `{ok, stdout, stderr, exit_code, compile_error, timed_out, duration_ms}`
 
@@ -58,8 +70,10 @@
 ```
 C:\Users\86138\Desktop\CodeLab.lnk/.bat   桌面启动端
 start.bat                                 项目内启动脚本
-server.py                                 本地引擎(环境检测 + 运行 API)
+server.py                                 本地引擎(环境检测 + 运行 API + 脚本/教程下载)
 index.html                                前端单文件(本地/线上自适应 + Agent 中心)
+install_agents.ps1                        AI Agent 一键自动安装脚本(⚡ 自动安装)
+INSTALL_TUTORIAL.md                       AI Agent 安装教程(📖 教程, 完整版)
 _deploy_online.py                         部署线上版(gh api Contents API,绕 git push)
 gui-test-screenshots/                     GUI 测试证据截图
 ```
